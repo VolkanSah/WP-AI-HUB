@@ -25,6 +25,12 @@ Perfect for working locally on WordPress, TYPO3, or your own code — without ru
 
 ---
 
+
+> [!IMPORTANT]
+> This project is under active development — always use the latest release from [Codey Lab Version ](https://github.com/Codey-LAB/WP-AI-HUB) *( i mean; more stable builds land here first)*.
+> This repo ([DEV-STATUS](https://github.com/VolkanSah/WP-AI-HUB)) is where the chaos happens. 🔬 a ⭐ on the repos will be cool 😙
+
+
 ## Architecture
 
 ```
