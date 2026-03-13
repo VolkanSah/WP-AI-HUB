@@ -1,5 +1,6 @@
 # WP AI Hub (Client)
 ##### Plugin crafted with AI as test (Idea and fixes by human)
+> works till yet 😄 no errors in logs
 
 Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway) and any compatible SSE hub.
 
