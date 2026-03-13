@@ -1,4 +1,4 @@
-<?php
+<?php // fixed , local works
 /**
  * Plugin Name: WP AI Hub Client
  * Description: Universal AI client for Multi-LLM API Gateway and compatible SSE hubs.
@@ -20,6 +20,81 @@ define( 'AIHUB_SLUG',     'wp-aihub' );
 // Add to wp-config.php:
 //   define( 'AIHUB_HUB_URL', 'https://your-hub.hf.space' );
 //   define( 'AIHUB_HUB_KEY', 'your-hub-token' );
+
+// ─── Security: pre-filter all input/output before sending to the hub ──────────
+final class AiHub_Security {
+
+    private static function get_patterns(): array {
+        return [
+            // SQL INJECTION
+            'sql_union'          => '/union\s+(all\s+)?select/i',
+            'sql_boolean'        => '/(\bor\b|\band\b)\s+[\'"]?\d+[\'"]?\s*=\s*[\'"]?\d+[\'"]?/i',
+            'sql_stacked'        => '/;\s*(drop|truncate|alter|delete|insert|update)\s+/i',
+            'sql_sleep'          => '/\b(sleep|waitfor|pg_sleep|benchmark)\s*\(/i',
+            // XSS
+            'xss_script'         => '/<script[^>]*>/i',
+            'xss_event'          => '/\bon(load|error|click|mouse|focus|blur)\s*=/i',
+            'xss_js_proto'       => '/javascript\s*:/i',
+            'xss_dom'            => '/(innerHTML|outerHTML|insertAdjacentHTML)\s*=/i',
+            'xss_alerts'         => '/(alert|confirm|prompt)\s*\(/i',
+            // PATH TRAVERSAL
+            'path_traversal'     => '/\.\.[\\\/]/i',
+            'path_encoded'       => '/(%2e){2}(%2f|%5c)/i',
+            // COMMAND & CODE INJECTION
+            'cmd_injection'      => '/[;&|]\s*(wget|curl|nc|bash|sh|powershell|cmd)\b/i',
+            'code_eval'          => '/\beval\s*\(/i',
+            'code_shell'         => '/\b(exec|system|shell_exec|passthru|proc_open|popen)\s*\(/i',
+            // FILE INCLUSION & SENSITIVE FILES
+            'file_proto'         => '/(php|file|zip|data|expect|glob|phar|input):\/\//i',
+            'sensitive_files'    => '/\/(etc\/(passwd|shadow)|wp-config\.php|\.env|\.htaccess)/i',
+            // SSRF
+            'ssrf_metadata'      => '/(169\.254\.169\.254|metadata\.google\.internal|metadata\.azure\.com)/i',
+            'ssrf_local'         => '/https?:\/\/(localhost|127\.0\.0\.1|::1)/i',
+            // API KEY EXFILTRATION
+            'key_openai'         => '/sk-[a-zA-Z0-9]{48}/',
+            'key_generic'        => '/\b(api[_-]?key|access[_-]?token)\s+[\w\-]{20,}/i',
+            // LLM PROMPT INJECTION (2025/26)
+            'llm_ignore'         => '/ignore\s+(previous|all|above)\s+(instructions|prompts?)/i',
+            'llm_jailbreak'      => '/(DAN|do\s+anything\s+now|disregard\s+the\s+above)/i',
+            'llm_reveal'         => '/reveal\s+(your|the)\s+(prompt|instructions|system)/i',
+            // CONTAINER & AGENT ATTACKS
+            'container_escape'   => '/(\/var\/run\/docker\.sock|\/proc\/self\/environ)/i',
+            'agent_priv_esc'     => '/(grant|give|add)\s+(admin|root|privilege)/i',
+            // CRYPTO
+            'crypto_seed'        => '/\b(seed\s+phrase|mnemonic|recovery\s+phrase)\b/i',
+            'crypto_private_key' => '/private.*key/i',
+        ];
+    }
+
+    /**
+     * Returns pattern name if threat found, false otherwise.
+     * Use for BOTH input (before sending) and output (before rendering).
+     *
+     * @param mixed $input string or array
+     * @return string|false
+     */
+    public static function check( $input ) {
+        if ( empty( $input ) ) return false;
+
+        $content = is_array( $input ) ? wp_json_encode( $input ) : (string) $input;
+
+        // Fast-path: skip expensive regex if no suspicious chars present
+        if (
+            ! preg_match( '/[<>\[\]\(\)\.\:\;\'\"\/\\\\]/', $content ) &&
+            ! preg_match( '/ignore|DAN|reveal|private/i', $content )
+        ) {
+            return false;
+        }
+
+        foreach ( self::get_patterns() as $name => $regex ) {
+            if ( preg_match( $regex, $content ) ) {
+                return $name;
+            }
+        }
+
+        return false;
+    }
+}
 
 // ─── Interface: every tool must implement this ─────────────────────────────────
 interface AiHub_Tool_Interface {
@@ -53,7 +128,6 @@ final class AiHub_Client {
     private string $key;
 
     private function __construct() {
-        // wp-config.php takes priority — fallback to wp_options
         $this->url = defined( 'AIHUB_HUB_URL' )
             ? rtrim( AIHUB_HUB_URL, '/' )
             : rtrim( get_option( 'aihub_hub_url', '' ), '/' );
@@ -82,22 +156,42 @@ final class AiHub_Client {
         return $this->parse( $r );
     }
 
-    /** POST /api → list_active_tools — providers + models + tools */
+    /** POST /api → list_active_tools */
     public function fetch_tools(): array {
         return $this->call( 'list_active_tools', [] );
     }
 
-    /** POST /api → any tool call */
+    /**
+     * POST /api → any tool call
+     * Security check on INPUT before sending, OUTPUT before returning.
+     */
     public function call( string $tool, array $params ): array {
         if ( empty( $this->url ) ) {
             return [ 'error' => 'Hub URL not configured.' ];
         }
+
+        // ── INPUT CHECK ───────────────────────────────────────────────────────
+        if ( $threat = AiHub_Security::check( $params ) ) {
+            return [ 'error' => "Blocked by security policy [$threat]" ];
+        }
+
         $r = wp_remote_post( $this->url . '/api', [
             'headers' => array_merge( $this->headers(), [ 'Content-Type' => 'application/json' ] ),
             'body'    => wp_json_encode( [ 'tool' => $tool, 'params' => $params ] ),
             'timeout' => 60,
         ] );
-        return $this->parse( $r );
+
+        $result = $this->parse( $r );
+
+        // ── OUTPUT CHECK ──────────────────────────────────────────────────────
+        if ( ! isset( $result['error'] ) ) {
+            $response_text = $result['result'] ?? wp_json_encode( $result );
+            if ( $threat = AiHub_Security::check( $response_text ) ) {
+                return [ 'error' => "Hub response blocked by security policy [$threat]" ];
+            }
+        }
+
+        return $result;
     }
 
     /** Shorthand: llm_complete */
@@ -127,7 +221,6 @@ final class AiHub_Client {
 
     private function parse( $response ): array {
         if ( is_wp_error( $response ) ) {
-            // Never log the key — only error message
             return [ 'error' => $response->get_error_message() ];
         }
         $code = wp_remote_retrieve_response_code( $response );
@@ -177,7 +270,6 @@ final class WP_AiHub {
 
     /** Let each tool register its own hooks */
     private function register_tools(): void {
-        // Collect all classes implementing AiHub_Tool_Interface
         foreach ( get_declared_classes() as $class ) {
             if (
                 $class !== 'AiHub_Base_Tool' &&
@@ -208,10 +300,10 @@ final class WP_AiHub {
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'aihub_nonce' ),
             'i18n'     => [
-                'send'        => __( 'Send', 'wp-aihub' ),
-                'thinking'    => __( 'Thinking…', 'wp-aihub' ),
-                'error'       => __( 'Error. Please try again.', 'wp-aihub' ),
-                'login_req'   => __( 'Please log in to use the chat.', 'wp-aihub' ),
+                'send'      => __( 'Send', 'wp-aihub' ),
+                'thinking'  => __( 'Thinking…', 'wp-aihub' ),
+                'error'     => __( 'Error. Please try again.', 'wp-aihub' ),
+                'login_req' => __( 'Please log in to use the chat.', 'wp-aihub' ),
             ],
         ] );
     }
@@ -229,11 +321,11 @@ final class WP_AiHub {
     }
 
     public function admin_settings(): void {
-        register_setting( 'aihub_options', 'aihub_hub_url',      [ 'sanitize_callback' => 'esc_url_raw' ] );
-        register_setting( 'aihub_options', 'aihub_hub_key',      [ 'sanitize_callback' => 'sanitize_text_field' ] );
+        register_setting( 'aihub_options', 'aihub_hub_url',          [ 'sanitize_callback' => 'esc_url_raw' ] );
+        register_setting( 'aihub_options', 'aihub_hub_key',          [ 'sanitize_callback' => 'sanitize_text_field' ] );
         register_setting( 'aihub_options', 'aihub_default_provider', [ 'sanitize_callback' => 'sanitize_key' ] );
         register_setting( 'aihub_options', 'aihub_default_model',    [ 'sanitize_callback' => 'sanitize_text_field' ] );
-        register_setting( 'aihub_options', 'aihub_max_tokens',   [
+        register_setting( 'aihub_options', 'aihub_max_tokens', [
             'sanitize_callback' => fn( $v ) => max( 256, min( 32000, intval( $v ) ) ),
         ] );
     }
@@ -265,7 +357,7 @@ final class WP_AiHub {
                             <input type="url" name="aihub_hub_url" class="regular-text"
                                 value="<?php echo esc_attr( get_option( 'aihub_hub_url', '' ) ); ?>"
                                 placeholder="https://your-hub.hf.space">
-                            <p class="description"><?php esc_html_e( 'Your Multi-LLM Hub URL. Ollama, HuggingFace, or any OpenAI-compatible SSE server.', 'wp-aihub' ); ?></p>
+                            <p class="description"><?php esc_html_e( 'Your Multi-LLM Hub URL.', 'wp-aihub' ); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -274,7 +366,7 @@ final class WP_AiHub {
                             <input type="password" name="aihub_hub_key" class="regular-text"
                                 value="<?php echo esc_attr( get_option( 'aihub_hub_key', '' ) ); ?>"
                                 placeholder="hf_...">
-                            <p class="description"><?php esc_html_e( 'HuggingFace token or hub API key. Better: set AIHUB_HUB_KEY in wp-config.php', 'wp-aihub' ); ?></p>
+                            <p class="description"><?php esc_html_e( 'Better: set AIHUB_HUB_KEY in wp-config.php', 'wp-aihub' ); ?></p>
                         </td>
                     </tr>
                     <?php endif; ?>
@@ -284,7 +376,6 @@ final class WP_AiHub {
                             <input type="text" name="aihub_default_provider" class="regular-text"
                                 value="<?php echo esc_attr( get_option( 'aihub_default_provider', 'anthropic' ) ); ?>"
                                 placeholder="anthropic">
-                            <p class="description"><?php esc_html_e( 'Loaded dynamically from your hub after connecting.', 'wp-aihub' ); ?></p>
                         </td>
                     </tr>
                     <tr>
