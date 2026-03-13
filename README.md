@@ -1,6 +1,13 @@
 # WP AI Hub Client
+##### Plugin crafted with AI as test (Idea and fixes by human)
 
 Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway) and any compatible SSE hub.
+
+> Built with the help of Claude (Anthropic) — NO AI FOR WEAPONS! — this started as an interface project for new AI model testing, combining three old handcrafted WordPress plugins, tested with custom hardening via a forked WP-Autoplugin. The AI-generated attempt produced a generated 15-file, ~5800-line monster that didn't even activate. So the test failed — not because of the idea, but because neither Gemini nor Claude initially understood what the hub actually is: not an MCP prompt collection server, not a `.claude` config thing — just a geeky self-built Multi-LLM hub with its own features and architecture. Once that was clear, we rebuilt from scratch into a clean ~1000-line single-purpose plugin. Sometimes AI helps you write code. Sometimes it helps you throw away code that other AIs wrote. 😄
+>
+> Maybe it's useful for your WordPress site too — cool security features, easy tool adding, no bloat.
+
+---
 
 ## Architecture
 
@@ -96,6 +103,21 @@ Override CSS custom properties:
 
 ## Security
 
+Every request goes through `AiHub_Security::check()` — both **input** (before sending to hub) and **output** (before returning to WordPress). Patterns cover:
+
+- SQL injection, XSS, path traversal
+- Command & code injection (`eval`, `exec`, `shell_exec` …)
+- SSRF & cloud metadata endpoints
+- LLM prompt injection (`ignore previous instructions`, jailbreaks …)
+- API key exfiltration attempts
+- Container escape paths (`/proc/self/environ`, `docker.sock`)
+- Crypto seed phrases & private keys
+
+Pattern design inspired by [PoisonIvory](https://github.com/VolkanSah/PoisonIvory) — adapted from Python PCRE to PHP. The hub runs its own second layer on top.
+
+Security-first means occasional false positives. That's fine — anyone asking a WordPress chat widget about `private key encryption` can open another tab.
+
+Additional hardening:
 - Hub URL and Key never exposed to frontend JS
 - All AJAX endpoints protected via nonce + `is_user_logged_in()`
 - Comment Reply requires `moderate_comments` capability
@@ -116,5 +138,5 @@ Hub Modes (future):
   `[aihub_chat provider="gemini" model="gemini-2.5-flash"]`
 
 ## License
-
-Apache-2.0 — © Volkan Kücükbudak
+This project is dual licensed under : Apache-2.0 [LICENSE] + ESOL[ESOL]-1.1 —
+> by © Volkan Kücükbudak for a more secure internet.
