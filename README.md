@@ -34,10 +34,14 @@ Works with: [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-G
 **Recommended — wp-config.php:**
 ```php
 define( 'AIHUB_HUB_URL', 'https://your-hub.hf.space' );
-define( 'AIHUB_HUB_KEY', 'hf_your_token' );
+define( 'AIHUB_HUB_KEY', 'hf_...' );
+define( 'AIHUB_DEFAULT_PROVIDER', 'anthropic' );
+define( 'AIHUB_DEFAULT_MODEL', 'claude-haiku-4-5-20251001' );
+define( 'AIHUB_MAX_TOKENS', 1024 );
 ```
 
-**Alternative — Settings → AI Hub** (keys stored in wp_options, less secure)
+**Alternative — Settings → AI Hub**
+For non-developers only. Keys stored in wp_options. Use wp-config.php whenever possible.
 
 ## Usage
 
@@ -89,6 +93,27 @@ Override CSS custom properties:
     --aihub-chat-width: 400px;
 }
 ```
+
+## Security
+
+- Hub URL and Key never exposed to frontend JS
+- All AJAX endpoints protected via nonce + `is_user_logged_in()`
+- Comment Reply requires `moderate_comments` capability
+- User input sanitized via `sanitize_textarea_field()` before sending to hub
+- Hub responses rendered via Markdown parser (`escHtml` first) — no raw HTML injection
+
+## Roadmap
+
+Tools planned for `/tools/`:
+- `post-generator.php`  → generate WP draft posts from prompt
+- `seo-helper.php`      → meta description + title suggestions
+- `admin-test.php`      → connection test in WP admin (optional)
+- `translation.php`     → auto-translate post content
+
+Hub Modes (future):
+- Direct API fallback if no hub configured
+- Per-tool provider/model override via shortcode attrs:
+  `[aihub_chat provider="gemini" model="gemini-2.5-flash"]`
 
 ## License
 
