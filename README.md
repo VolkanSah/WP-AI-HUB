@@ -3,7 +3,7 @@
 
 Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway) and any compatible SSE hub.
 
-> Built with the help of Claude (Anthropic) — NO AI FOR WEAPONS! — this started as an interface project for new AI model testing, combining three old handcrafted WordPress plugins, tested with custom hardening via a forked WP-Autoplugin. The AI-generated attempt produced a generated 15-file, ~5800-line monster that didn't even activate. So the test failed — not because of the idea, but because neither Gemini nor Claude initially understood what the hub actually is: not an MCP prompt collection server, not a `.claude` config thing — just a geeky self-built Multi-LLM hub with its own features and architecture. Once that was clear, we rebuilt from scratch into a clean ~1000-line single-purpose plugin. Sometimes AI helps you write code. Sometimes it helps you throw away code that other AIs wrote. 😄
+> Built with the help of Claude (Anthropic) — NO AI FOR WEAPONS! — this started as an interface project for new AI model testing, combining three old handcrafted WordPress plugins, tested with custom hardening via a forked WP-Autoplugin. The AI-generated attempt produced a generated 15-file, ~5800-line trash-monster that didn't even activate. So the test failed, again AI cant code! — not because of the idea, but because neither Gemini nor Claude initially understood what the hub actually is: not an MCP prompt collection server, not a `.claude` config thing — just a geeky self-built Multi-LLM hub with its own features and architecture. Once that was clear, we rebuilt from scratch into a clean ~1000-line single-purpose plugin. Sometimes AI helps you write code. Sometimes it helps you throw away code that other AIs wrote. 😄
 >
 > Maybe it's useful for your WordPress site too — cool security features, easy tool adding, no bloat.
 
@@ -12,7 +12,7 @@ Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https:
 ## Architecture
 
 ```
-wp-aihub.php          → Bootstrap, AiHub_Client, AiHub_Base_Tool, WP_AiHub
+wp-aihub.php          → Bootstrap, AiHub_Security, AiHub_Client, AiHub_Base_Tool, WP_AiHub
 tools/
   chat.php            → [aihub_chat] shortcode + floating widget
   comment-reply.php   → AI Reply button in WP admin comments
@@ -113,7 +113,7 @@ Every request goes through `AiHub_Security::check()` — both **input** (before 
 - Container escape paths (`/proc/self/environ`, `docker.sock`)
 - Crypto seed phrases & private keys
 
-Pattern design inspired by [PoisonIvory](https://github.com/VolkanSah/PoisonIvory) — adapted from Python PCRE to PHP. The hub runs its own second layer on top.
+Pattern design inspired by [PoisonIvory](https://github.com/VolkanSah/PoisonIvory) — adapted from Python PCRE to PHP. You can run Ivory as your own second layer on your own SSE-HUB, too.
 
 Security-first means occasional false positives. That's fine — anyone asking a WordPress chat widget about `private key encryption` can open another tab.
 
@@ -140,3 +140,6 @@ Hub Modes (future):
 ## License
 This project is dual licensed under : Apache-2.0 [LICENSE] + ESOL[ESOL]-1.1 —
 > by © Volkan Kücükbudak for a more secure internet.
+
+### Note:
+This plugin is not perfekt and must be seen as a test of AI Coding and Human interaktivity. If its usefull, send feedback, if i will use it for wordpress i do not know but i jnow whats needed in web :P here an boilerplate from AI for AI orchestret by a Wannabe Professor :D
