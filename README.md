@@ -13,11 +13,12 @@ Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https:
 
 Almost everyone has a WordPress site — so why not use it properly? Instead of installing dozens of limited AI plugins, just build your own wrapper or use mine, and connect free AI models to work with WordPress and your community.
 
-Yes, "MCP server" makes my hair stand on end too — but what this plugin was actually built for is a private [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway): a production-grade universal AI wrapper over SSE + Quart with sandboxed tool support, Guardian pattern, and a solid PyFundaments foundation. Pick the description that fits your use case:
+Yes, "MCP server" makes my hair stand on end too — but what this plugin was actually built for is a private [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway): a production-grade universal AI wrapper over streamable http + Quart (and many more) with sandboxed tool support, Guardian pattern, and a solid PyFundaments foundation. Pick the description that fits your use case:
 
 - Multi-LLM API Gateway with MCP interface
 - Universal MCP Hub (Sandboxed)
-- Universal AI Wrapper over SSE + Quart
+- Universal AI Wrapper over Quart
+- Or just  an (real) AI HUB
 
 They're all correct. What matters: one hub, all your models, LLM fallback chain built-in — WordPress just talks to it via this thin client. Claude down? Gemini answers. Zero code changes. Zero Docker chaos.
 
@@ -49,7 +50,7 @@ The plugin is intentionally thin — no provider logic, no API keys for LLMs, no
 
 ## Supported Hubs
 
-Any SSE server exposing:
+Any HUB server exposing:
 - `GET /` → health check
 - `POST /api` with `{"tool": "...", "params": {...}}` → tool call
 
