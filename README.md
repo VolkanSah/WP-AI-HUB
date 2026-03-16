@@ -1,7 +1,7 @@
 # WP AI Hub (Client)
 ##### Plugin crafted with AI as test (Idea and fixes by human)
 
-Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway) and any compatible SSE hub.
+Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway) and any compatible (REST) hub.
 
 > Built with the help of Claude (Anthropic) — NO AI FOR WEAPONS! — this started as an interface project for new AI model testing, combining three old handcrafted WordPress plugins, tested with custom hardening via a forked WP-Autoplugin. The AI-generated attempt produced a generated 15-file, ~5800-line trash-monster that didn't even activate. So the test failed, again AI cant code! — not because of the idea, but because neither Gemini nor Claude initially understood what the hub actually is: not an MCP prompt collection server, not a `.claude` config thing — just a geeky self-built Multi-LLM hub with its own features and architecture. Once that was clear, we rebuilt from scratch into a clean ~1000-line single-purpose plugin. Sometimes AI helps you write code. Sometimes it helps you throw away code that other AIs wrote. 😄
 >
