@@ -1,7 +1,9 @@
 # WP AI Hub (Client)
 ##### Plugin crafted with AI as test (Idea and fixes by human)
 
-Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway) and any compatible (REST) hub.
+Universal AI WordPress plugin — thin client for [Universal AI Hub](https://github.com/VolkanSah/Universal-AI-Hub) and any compatible (REST) hub.
+
+
 
 > Built with the help of Claude (Anthropic) — NO AI FOR WEAPONS! — this started as an interface project for new AI model testing, combining three old handcrafted WordPress plugins, tested with custom hardening via a forked WP-Autoplugin. The AI-generated attempt produced a generated 15-file, ~5800-line trash-monster that didn't even activate. So the test failed, again AI cant code! — not because of the idea, but because neither Gemini nor Claude initially understood what the hub actually is: not an MCP prompt collection server, not a `.claude` config thing — just a geeky self-built Multi-LLM hub with its own features and architecture. Once that was clear, we rebuilt from scratch into a clean ~1000-line single-purpose plugin. Sometimes AI helps you write code. Sometimes it helps you throw away code that other AIs wrote. 😄
 >
@@ -13,7 +15,7 @@ Universal AI WordPress plugin — thin client for [Multi-LLM API Gateway](https:
 
 Almost everyone has a WordPress site — so why not use it properly? Instead of installing dozens of limited AI plugins, just build your own wrapper or use mine, and connect free AI models to work with WordPress and your community.
 
-Yes, "MCP server" makes my hair stand on end too — but what this plugin was actually built for is a private [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway): a production-grade universal AI wrapper over streamable http + Quart (and many more) with sandboxed tool support, Guardian pattern, and a solid PyFundaments foundation. Pick the description that fits your use case:
+Yes, "MCP server" makes my hair stand on end too — but what this plugin was actually built for is a private [Universal AI Hub](https://github.com/VolkanSah/Universal-AI-Hub): a production-grade universal AI wrapper over streamable http + Quart (and many more) with sandboxed tool support, Guardian pattern, and a solid PyFundaments foundation. Pick the description that fits your use case:
 
 - Multi-LLM API Gateway with MCP interface
 - Universal MCP Hub (Sandboxed)
@@ -54,7 +56,7 @@ Any HUB server exposing:
 - `GET /` → health check
 - `POST /api` with `{"tool": "...", "params": {...}}` → tool call
 
-Works with: [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway), Ollama, LM Studio, HuggingFace Spaces, any OpenAI-compatible server.
+Works with: [Universal AI Hub](https://github.com/VolkanSah/Universal-AI-Hub), Ollama, LM Studio, HuggingFace Spaces, any OpenAI-compatible server.
 
 The hub handles: provider abstraction, fallback chain, rate limiting, sandboxed tools, model config.
 The plugin handles: WordPress UI, AJAX, nonce security, output sanitization.
@@ -63,7 +65,7 @@ The plugin handles: WordPress UI, AJAX, nonce security, output sanitization.
 
 1. Upload to `/wp-content/plugins/wp-aihub/`
 2. Activate in WordPress
-3. Set up your hub (see [Multi-LLM API Gateway](https://github.com/VolkanSah/Multi-LLM-API-Gateway))
+3. Set up your hub (see [Universal AI Hub](https://github.com/VolkanSah/Universal-AI-Hub)
 
 ## Configuration
 
